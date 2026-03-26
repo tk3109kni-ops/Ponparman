@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ポンパーマン</title>
+
+<style>
+
+#field{
+background:aqua;
+border:5px solid black; 
+display:block;
+margin:auto;
+}
+
+#Start{
+background-color: orange;
+border: solid 2px;
+color: white;
+position: absolute;
+top: 30px;
+font-size: 30px;
+}
+
+#Start:hover{
+background-color: orangered;
+}
+#hp{
+    color: red;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 30px;
+    border: red solid;
+}
+#score{
+    color: green;
+    position: absolute;
+    top: 60px;
+    right: 20px;
+    font-size: 30px;
+    border: green solid;
+}
+</style>
+
+</head>
+
+<body>
+
+<canvas id="field" width="600" height="540"></canvas>
+<img src="marisa.png" id="player" style="display:none">
+<img src="kuribo.png" id="enemy" style="display: none">
+<img src="bomb.png" id="bombomb" style="display: none">
+<button id="Start">死合開始！</button>
+<div id="hp">HP: 3</div>
+<div id="score">らうんど: 0</div>
+<script>
+
+const canvas = document.getElementById("field");
+const ctx = canvas.getContext("2d");
+const marisa = document.getElementById("player");
+const enemIMG = document.getElementById("enemy")
+const Bombimg = document.getElementById("bombomb")
+const tileSize = 30;
+
+//////////////////////////////////////////////////
+// マップ
+//////////////////////////////////////////////////
+
+const map1 =[
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,1],
+[1,0,1,1,0,1,1,0,2,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,1],
+[1,0,1,1,0,0,0,0,0,0,0,0,0,1,0,1,1,0,0,1],
+[1,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
+[1,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1],
+[1,0,0,1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,0,0,0,0,1,0,0,2,0,0,1,0,0,1,0,0,0,1],
+[1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+[1,0,0,0,1,0,0,1,1,0,2,0,0,1,0,0,0,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1],
+[1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,0,0,2,2,0,0,0,1,1,1,0,0,0,0,0,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+]
+const map2 = [
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1],
+[1,0,0,1,0,0,2,0,0,1,1,0,0,2,0,0,1,0,0,1],
+[1,0,1,0,1,0,0,0,0,1,1,0,0,0,0,1,0,1,0,1],
+[1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,0,1,0,2,1,0,2,1,1,2,0,1,2,0,1,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
+[1,0,1,0,1,0,0,0,0,1,1,0,0,0,0,1,0,1,0,1],
+[1,0,0,1,0,0,2,0,0,1,1,0,0,2,0,0,1,0,0,1],
+[1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+]
+const map3 = [
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,1,0,1,1,2,1,1,1,0,1,1,1,2,1,1,1,0,1],
+[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,2,0,1,0,1,1,2,1,1,0,1,1,1,2,1,1,0,1],
+[1,0,1,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,1,0,1,0,1,0,1,2,1,1,0,1,2,1,1,1,0,1],
+[1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,0,0,1,0,1,0,1,0,1,2,1,0,1,2,1,1,0,1],
+[1,0,1,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1],
+[1,0,1,0,1,0,0,0,1,0,1,0,1,1,0,1,1,1,0,1],
+[1,0,1,0,2,0,1,0,0,0,1,0,0,0,0,0,0,0,0,1],
+[1,0,2,0,1,0,2,0,1,0,0,0,1,0,1,0,1,1,0,1],
+[1,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,0,1],
+[1,0,1,0,1,0,1,0,1,0,2,0,1,0,0,0,0,1,0,1],
+[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,0,1],
+[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+]
+
+const maps = [map1,map2,map3];
+
+let currentMap = chooseRandomMap();
+
+function chooseRandomMap(){
+const base = maps[Math.floor(Math.random()*maps.length)];
+return base.map(row => row.slice());
+}
+
+//////////////////////////////////////////////////
+// プレイヤー
+//////////////////////////////////////////////////
+
+const player = {
+x:350,
+y:30,
+size:25,
+speed:1
+};
+
+//////////////////////////////////////////////////
+// 入力
+//////////////////////////////////////////////////
+
+const keys = {};
+const enemies = [];
+const bombs = [];
+const explosions = [];
+const tairyoku = document.getElementById("hp")
+//敵
+function spawnEnemies(num){
+
+for(let i=0;i<num;i++){
+
+let gx,gy;
+
+do{
+
+gx = Math.floor(Math.random()*20);
+gy = Math.floor(Math.random()*18);
+
+}while(currentMap[gy][gx] === 1 ||
+Math.abs(gx - Math.floor(player.x/tileSize)) < 2 &&
+    Math.abs(gy - Math.floor(player.y/tileSize)) < 2
+);
+enemies.push({
+x: gx*tileSize,
+y: gy*tileSize,
+size:25,
+speed:0.3+0.1*score,
+dir:Math.floor(Math.random()*4)
+});
+
+}
+
+}
+
+// 経路のけーさん
+function getPath(startX, startY, goalX, goalY, map) {
+    const queue = [];
+    const visited = Array(map.length).fill(0).map(() => Array(map[0].length).fill(false));
+    const parent = Array(map.length).fill(0).map(() => Array(map[0].length).fill(null));
+
+    queue.push([startX, startY]);
+    visited[startY][startX] = true;
+
+    const dirs = [[1,0], [-1,0], [0,1], [0,-1]]; // 右・左・下・上
+
+    while(queue.length > 0) {
+        const [x, y] = queue.shift();
+        if(x === goalX && y === goalY) break;
+
+        for(const [dx, dy] of dirs) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if(nx >=0 && nx < map[0].length && ny >=0 && ny < map.length &&
+               !visited[ny][nx] && map[ny][nx] === 0) {
+                queue.push([nx, ny]);
+                visited[ny][nx] = true;
+                parent[ny][nx] = [x, y];
+            }
+        }
+    }
+
+    // 経路ふくげん
+    const path = [];
+    let cx = goalX, cy = goalY;
+    while(parent[cy][cx] !== null) {
+        path.unshift([cx, cy]);
+        [cx, cy] = parent[cy][cx];
+    }
+    return path; // [ [x1,y1], [x2,y2], ... ]
+}
+
+// 敵の更新
+function updateEnemies(){
+    for(let e of enemies){
+        const gx = Math.floor(e.x / tileSize);
+        const gy = Math.floor(e.y / tileSize);
+        const px = Math.floor(player.x / tileSize);
+        const py = Math.floor(player.y / tileSize);
+
+        const path = getPath(gx, gy, px, py, currentMap);
+
+        if(path.length > 0){
+            // path[0] が次の目標タイル
+            const [nx, ny] = path[0];
+
+            // タイル単位で移動
+            const targetX = nx * tileSize;
+const targetY = ny * tileSize;
+
+if(Math.abs(e.x - targetX) < e.speed){
+    e.x = targetX;
+}else if(e.x < targetX){
+    e.x += e.speed;
+}else if(e.x > targetX){
+    e.x -= e.speed;
+}
+
+if(Math.abs(e.y - targetY) < e.speed){
+    e.y = targetY;
+}else if(e.y < targetY){
+    e.y += e.speed;
+}else if(e.y > targetY){
+    e.y -= e.speed;
+}
+        }
+    }
+}
+function drawEnemies(){
+
+for(let e of enemies){
+ctx.drawImage(enemIMG,e.x,e.y,e.size,e.size);
+}
+
+}
+function checkEnemyDeath(){
+
+for(let i=enemies.length-1;i>=0;i--){
+
+let e = enemies[i];
+
+for(let ex of explosions){
+
+if(
+e.x < ex.x + tileSize &&
+e.x + e.size > ex.x &&
+e.y < ex.y + tileSize &&
+e.y + e.size > ex.y
+){
+
+enemies.splice(i,1);
+
+}
+
+}
+
+}
+
+}
+function takeDamage(){
+
+const now = Date.now();
+
+if(!player.invincible){
+HP--;
+player.invincible = true;
+player.invincibleTime = now + 1000;
+}
+
+}
+function updateInvincible(){
+
+const now = Date.now();
+
+if(player.invincible && now > player.invincibleTime){
+    player.invincible = false;
+}
+
+}
+function checkEnemyHitPlayer(){
+
+for(let e of enemies){
+
+if(
+player.x < e.x + e.size &&
+player.x + player.size > e.x &&
+player.y < e.y + e.size &&
+player.y + player.size > e.y
+){
+takeDamage();
+if(HP <= 0){
+    alert("Game Over")
+    score = 0
+    restartGame()
+}
+
+}
+
+}
+
+}
+document.addEventListener("keydown",(e)=>{
+
+keys[e.key]=true;
+
+if(e.key==="c" || e.key==="C"){
+
+let gridX=Math.floor(player.x/tileSize);
+let gridY=Math.floor(player.y/tileSize);
+
+if(!bombs.some(b=>b.x===gridX*tileSize && b.y===gridY*tileSize)){
+
+bombs.push({
+x:gridX*tileSize,
+y:gridY*tileSize,
+time: Date.now(),
+type:"normal"
+});
+
+}
+
+}
+if(e.key==="x" || e.key==="X"){
+    let gridX=Math.floor(player.x/tileSize);
+let gridY=Math.floor(player.y/tileSize);
+
+if(!bombs.some(b=>b.x===gridX*tileSize && b.y===gridY*tileSize)){
+
+bombs.push({
+x:gridX*tileSize,
+y:gridY*tileSize,
+time: Date.now(),
+type:"long"
+});
+}
+
+}});
+function createExplosion(x, y){
+
+explosions.push({x:x, y:y, time:Date.now()}); // 中央
+let cx = Math.floor(x / tileSize);
+    let cy = Math.floor(y / tileSize);
+    if(currentMap[cy][cx] === 2){
+        currentMap[cy][cx] = 0;
+    }
+const dirs = [
+    [1,0],[-1,0],[0,1],[0,-1]
+];
+
+for(let [dx, dy] of dirs){
+    for(let i = 1; i <= 1; i++){ // 爆発の長さ
+
+        let ex = x + dx * tileSize * i;
+        let ey = y + dy * tileSize * i;
+
+        let gx = Math.floor(ex / tileSize);
+        let gy = Math.floor(ey / tileSize);
+
+        // 壁で止める
+        if(currentMap[gy][gx] === 1) break;
+        if(currentMap[gy][gx] === 2){
+            currentMap[gy][gx] = 3
+            break
+        }
+
+        explosions.push({
+            x: ex,
+            y: ey,
+            time: Date.now()
+        });
+    }
+}
+}
+function createExplosion2(x, y){
+
+explosions.push({x:x, y:y, time:Date.now()}); // 中央
+let cx = Math.floor(x / tileSize);
+    let cy = Math.floor(y / tileSize);
+    if(currentMap[cy][cx] === 2){
+        currentMap[cy][cx] = 0;
+    }
+const dirs = [
+    [1,0],[-1,0],[0,1],[0,-1]
+];
+
+for(let [dx, dy] of dirs){
+    for(let i = 1; i <= 3; i++){ // 爆発の長さ
+
+        let ex = x + dx * tileSize * i;
+        let ey = y + dy * tileSize * i;
+
+        let gx = Math.floor(ex / tileSize);
+        let gy = Math.floor(ey / tileSize);
+
+        // 壁で止める
+        if(currentMap[gy][gx] === 1) break;
+        if(currentMap[gy][gx] === 2){
+            currentMap[gy][gx] = 3
+            break
+        }
+
+        explosions.push({
+            x: ex,
+            y: ey,
+            time: Date.now()
+        });
+    }
+}
+}
+function updateExplosions(){
+
+for(let i=explosions.length-1;i>=0;i--){
+
+if(Date.now() - explosions[i].time > 100){
+
+explosions.splice(i,1);
+
+}
+
+}
+
+}
+function drawExplosions(){
+
+for(let e of explosions){
+
+ctx.fillStyle="orange";
+ctx.fillRect(e.x,e.y,tileSize,tileSize);
+
+}
+
+}
+function updateBombs(){
+
+for(let i = bombs.length - 1; i >= 0; i--){
+    let b = bombs[i];
+
+    // 🔥 爆発に当たったら即爆発（連鎖）
+    for(let ex of explosions){
+        if(
+            b.x < ex.x + tileSize &&
+            b.x + tileSize > ex.x &&
+            b.y < ex.y + tileSize &&
+            b.y + tileSize > ex.y
+        ){
+            if(b.type === "normal"){
+                createExplosion(b.x, b.y);
+            }
+            else if(b.type === "long"){
+                createExplosion2(b.x,b.y);
+            }
+            bombs.splice(i,1);
+            break;
+        }
+        
+    }
+
+    // ⏱ 通常の3秒爆発
+    if(Date.now() - b.time > 3000){
+        if(b.type === "normal"){
+            createExplosion(b.x, b.y);
+        }
+        else if(b.type === "long"){
+            createExplosion2(b.x,b.y)
+        }
+        
+        bombs.splice(i,1);
+    }
+
+}
+
+}
+document.addEventListener("keyup",(e)=>{
+keys[e.key]=false;
+});
+let HP = 3;
+player.invincible = false
+player.invincibleTime =  0
+function checkPlayerDeath(){
+    const now = Date.now();
+
+    for(let e of explosions){
+        if(
+            player.x < e.x + tileSize &&
+            player.x + player.size > e.x &&
+            player.y < e.y + tileSize &&
+            player.y + player.size > e.y
+        ){
+            takeDamage()
+        }
+    }
+
+   
+
+    if(HP <= 0){
+        gameOver();
+    }
+}
+function gameOver(){
+
+alert("ゲームオーバー！");
+score = 0
+
+restartGame();
+
+}
+function restartGame(){
+    // 古いループを止める
+    if(gameLoopID) cancelAnimationFrame(gameLoopID);
+    gameLoopID = null;
+
+    gameStarted = false;
+    currentMap = chooseRandomMap();
+
+    player.x = 350;
+    player.y = 30;
+    HP = 3;
+    player.invincible = false;
+    player.invincibleTime = 0;
+
+    bombs.length = 0;
+    explosions.length = 0;
+    enemies.length = 0;
+
+    for(let k in keys){
+        keys[k] = false
+    }
+}
+function hp(){
+    tairyoku.innerText = `HP :${HP}`;
+}
+
+// 移動判定
+
+
+function canMove(nx,ny){
+
+let left=Math.floor(nx/tileSize);
+let right=Math.floor((nx+player.size)/tileSize);
+let top=Math.floor(ny/tileSize);
+let bottom=Math.floor((ny+player.size)/tileSize);
+
+if(
+currentMap[top][left]===1 ||
+currentMap[top][right]===1 ||
+currentMap[bottom][left]===1 ||
+currentMap[bottom][right]===1 ||
+currentMap[top][left]===2 ||
+currentMap[top][right]===2 ||
+currentMap[bottom][left]===2 ||
+currentMap[bottom][right]===2
+){
+return false;
+}
+
+return true;
+}
+
+
+// 更新
+
+
+function update(){
+
+let nx=player.x;
+let ny=player.y;
+
+if(keys["w"]||keys["W"]) ny-=player.speed;
+if(keys["s"]||keys["S"]) ny+=player.speed;
+if(keys["a"]||keys["A"]) nx-=player.speed;
+if(keys["d"]||keys["D"]) nx+=player.speed;
+
+if(canMove(nx,ny)){
+player.x=nx;
+player.y=ny;
+}
+
+}
+
+
+// 描画
+
+
+function drawMap(){
+
+for(let y=0;y<currentMap.length;y++){
+for(let x=0;x<currentMap[y].length;x++){
+
+if(currentMap[y][x]===1){
+
+ctx.fillStyle="black";
+ctx.fillRect(x*tileSize,y*tileSize,tileSize,tileSize);
+
+}
+
+}
+}
+
+}
+function drawMap2(){
+    for(let y=0;y<currentMap.length;y++){
+        for(let x=0;x<currentMap[y].length;x++){
+            if(currentMap[y][x]===2){
+                ctx.fillStyle="gray";
+                ctx.fillRect(x*tileSize,y*tileSize,tileSize,tileSize);
+            }
+        }
+    }
+}
+function drawBombs(){
+
+for(let b of bombs){
+
+ctx.drawImage(Bombimg,b.x,b.y,tileSize,tileSize);
+
+}
+
+}
+
+function draw(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+drawMap();
+drawMap2();
+drawBombs();
+drawExplosions();
+drawEnemies();
+
+ctx.drawImage(marisa,player.x,player.y,player.size,player.size);
+
+}
+
+//////////////////////////////////////////////////
+// ゲームループ
+//////////////////////////////////////////////////
+
+let gameStarted=false;
+let gameLoopID = null
+function gameLoop(){
+
+if(!gameStarted) return;
+updateInvincible();
+if(enemies.length === 0){
+    wingame()
+}
+update();
+updateEnemies();
+updateBombs();
+updateExplosions();
+checkEnemyDeath();
+checkEnemyHitPlayer();
+checkPlayerDeath();
+hp();
+draw();
+
+gameLoopID = requestAnimationFrame(gameLoop);
+
+}
+
+//////////////////////////////////////////////////
+// スタートボタン
+//////////////////////////////////////////////////
+let score = 0
+const round = document.getElementById("score")
+function updateround(){
+    round.innerText = `らうんど :${score}`
+}
+function wingame(){
+    alert("勝利！！！")
+    gameStarted = false;
+    if(gameLoopID) cancelAnimationFrame(gameLoopID);
+gameLoopID = null;
+
+
+}
+document.getElementById("Start").addEventListener("click",()=>{
+    for(let k in keys){
+        keys[k] = false
+    }
+    if(gameStarted) return;
+    if(gameLoopID){
+    cancelAnimationFrame(gameLoopID);
+    gameLoopID = null;
+}
+
+
+score++
+HP = 3;
+currentMap=chooseRandomMap();
+updateround();
+player.x=350;
+player.y=30;
+
+bombs.length=0;
+enemies.length = 0;
+
+spawnEnemies(5);
+gameStarted=true;
+
+gameLoop();
+
+});
+
+</script>
+
+</body>
+</html>
