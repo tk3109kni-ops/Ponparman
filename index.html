@@ -55,8 +55,8 @@ h2{
     Cで爆弾(弱)<br>
     Xで爆弾(強)</h2>
 <canvas id="field" width="600" height="540"></canvas>
-<img src="marisa.png" id="player" style="display:none">
-<img src="kuribo.png" id="enemy" style="display: none">
+<img src="thi-da.png" id="player" style="display:none">
+<img src="wakka.png" id="enemy" style="display: none">
 <img src="bomb.png" id="bombomb" style="display: none">
 <button id="Start">死合開始！</button>
 <div id="hp">HP: 3</div>
@@ -193,7 +193,7 @@ dir:Math.floor(Math.random()*4)
 
 }
 
-// 経路のけーさん
+
 function getPath(startX, startY, goalX, goalY, map) {
     const queue = [];
     const visited = Array(map.length).fill(0).map(() => Array(map[0].length).fill(false));
@@ -202,7 +202,7 @@ function getPath(startX, startY, goalX, goalY, map) {
     queue.push([startX, startY]);
     visited[startY][startX] = true;
 
-    const dirs = [[1,0], [-1,0], [0,1], [0,-1]]; // 右・左・下・上
+    const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
 
     while(queue.length > 0) {
         const [x, y] = queue.shift();
